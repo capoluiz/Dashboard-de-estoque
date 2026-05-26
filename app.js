@@ -10,7 +10,7 @@
   const SALES_WINDOW = data.salesWindowDays || 90;
 
   const state = {
-    daysThreshold: 14,
+    daysThreshold: 5,
     searchQuery: '',
     statusFilter: 'all',
     vendorFilter: 'all',
@@ -75,6 +75,11 @@
     document.getElementById('stat-total').textContent = totalUnits.toLocaleString('pt-BR');
     document.getElementById('stat-total-detail').innerHTML =
       `<strong>${totalSold}</strong> vendidos em 90 dias`;
+
+    // Sincroniza visualmente qual card está "ativo" com o filtro atual
+    document.querySelectorAll('.stat-card[data-card-filter]').forEach(card => {
+      card.classList.toggle('active', card.dataset.cardFilter === state.statusFilter);
+    });
   }
 
   function renderRecommendations(products) {
@@ -142,6 +147,7 @@
 
     if (state.statusFilter !== 'all') {
       filtered = filtered.filter(p => {
+        if (state.statusFilter === 'out') return p.stock === 0;
         if (state.statusFilter === 'critical') return p.status === 'critical';
         if (state.statusFilter === 'warning') return p.status === 'warning';
         if (state.statusFilter === 'ok') return p.status === 'ok' || p.status === 'stagnant';
@@ -270,28 +276,46 @@
     });
   }
 
-  function setupEvents() {
-    const slider = document.getElementById('days-slider');
-    const value = document.getElementById('days-value');
-    const display = document.getElementById('days-display');
-    slider.addEventListener('input', e => {
-      state.daysThreshold = parseInt(e.target.value, 10);
-      value.textContent = state.daysThreshold;
-      display.textContent = state.daysThreshold;
-      render();
+  // Helper: muda o filtro de status e sincroniza UI
+  function setStatusFilter(value) {
+    state.statusFilter = value;
+    // Sincroniza botões superiores
+    document.querySelectorAll('.filter-btn[data-filter]').forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === value);
     });
+    render();
+  }
 
+  function setupEvents() {
     document.getElementById('search').addEventListener('input', e => {
       state.searchQuery = e.target.value;
       render();
     });
 
+    // Botões superiores de filtro
     document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.statusFilter = btn.dataset.filter;
-        render();
+        setStatusFilter(btn.dataset.filter);
+      });
+    });
+
+    // Cards principais → também filtram (com toggle: clicar de novo desmarca)
+    document.querySelectorAll('.stat-card[data-card-filter]').forEach(card => {
+      const apply = () => {
+        const target = card.dataset.cardFilter;
+        // Se o card já está ativo, volta para "all"
+        if (state.statusFilter === target) {
+          setStatusFilter('all');
+        } else {
+          setStatusFilter(target);
+        }
+      };
+      card.addEventListener('click', apply);
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          apply();
+        }
       });
     });
 
