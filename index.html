@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bebidasem · Painel de Estoque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --paper: #f4ede0;
+  --paper-warm: #ebe1cc;
+  --accent: #b8420d;
+  --accent-soft: #d4623a;
+  --gold: #c89a3a;
+  --green: #4a6b3a;
+  --red: #b03030;
+  --amber: #c47816;
+  --shadow: rgba(26, 20, 16, 0.12);
+  --border: rgba(26, 20, 16, 0.15);
+  --muted: rgba(26, 20, 16, 0.55);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(184, 66, 13, 0.04) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(200, 154, 58, 0.05) 0, transparent 40%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+}
+
+.container {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: end;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+.brand-block { line-height: 1; }
+
+.brand-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.brand-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: var(--muted);
+  vertical-align: middle;
+  margin-right: 10px;
+  margin-bottom: 3px;
+}
+
+h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: clamp(38px, 5vw, 64px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 144;
+}
+
+h1 em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.header-meta {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.header-meta div { margin-bottom: 4px; }
+.header-meta .live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  font-weight: 600;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+/* STATS CARDS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.stat-card {
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover { transform: translateY(-2px); }
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--ink);
+}
+
+.stat-card.critical::after { background: var(--red); }
+.stat-card.warning::after { background: var(--amber); }
+.stat-card.success::after { background: var(--green); }
+.stat-card.accent::after { background: var(--accent); }
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.stat-value {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.stat-detail {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stat-detail strong { color: var(--ink); font-weight: 600; }
+
+/* SECTIONS */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.section-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  padding: 12px 16px 12px 40px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  transition: border-color 0.2s;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.search-box::before {
+  content: '⌕';
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 16px;
+}
+
+select, .filter-btn {
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  padding: 11px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+select:hover, .filter-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.filter-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.filter-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.filter-group .filter-btn {
+  border: none;
+  border-right: 1px solid var(--border);
+}
+
+.filter-group .filter-btn:last-child { border-right: none; }
+
+/* THRESHOLD */
+.threshold-control {
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: center;
+}
+
+.threshold-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.threshold-label strong {
+  display: block;
+  color: var(--ink);
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+  text-transform: none;
+}
+
+.threshold-label strong em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 24px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(to right, var(--red) 0%, var(--amber) 50%, var(--green) 100%);
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--ink);
+  border-radius: 50%;
+  margin-top: -9px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: linear-gradient(to right, var(--red) 0%, var(--amber) 50%, var(--green) 100%);
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--ink);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.threshold-value {
+  font-family: 'Fraunces', serif;
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--accent);
+  min-width: 80px;
+  text-align: right;
+  letter-spacing: -0.02em;
+}
+
+.threshold-value span {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* TABLE */
+.table-wrap {
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+thead {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+th {
+  padding: 14px 16px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+th:hover { background: rgba(255,255,255,0.05); }
+
+th.sortable::after {
+  content: ' ⇅';
+  opacity: 0.4;
+  font-size: 10px;
+}
+
+th.sort-asc::after { content: ' ↑'; opacity: 1; }
+th.sort-desc::after { content: ' ↓'; opacity: 1; }
+
+td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+tbody tr { transition: background 0.15s; }
+tbody tr:hover { background: rgba(184, 66, 13, 0.04); }
+tbody tr.row-critical { background: rgba(176, 48, 48, 0.06); }
+tbody tr.row-critical:hover { background: rgba(176, 48, 48, 0.1); }
+tbody tr.row-warning { background: rgba(196, 120, 22, 0.05); }
+tbody tr.row-warning:hover { background: rgba(196, 120, 22, 0.1); }
+
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 280px;
+}
+
+.product-thumb {
+  width: 44px;
+  height: 44px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.product-info { min-width: 0; }
+
+.product-name {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.product-sku {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.numeric {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.stock-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+
+.stock-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.stock-bar-fill {
+  height: 100%;
+  background: var(--green);
+  transition: width 0.4s ease;
+}
+
+.stock-bar-fill.warning { background: var(--amber); }
+.stock-bar-fill.critical { background: var(--red); }
+
+.stock-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 32px;
+  text-align: right;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.badge.critical { background: rgba(176, 48, 48, 0.12); color: var(--red); }
+.badge.critical::before { background: var(--red); }
+.badge.warning { background: rgba(196, 120, 22, 0.12); color: var(--amber); }
+.badge.warning::before { background: var(--amber); }
+.badge.ok { background: rgba(74, 107, 58, 0.12); color: var(--green); }
+.badge.ok::before { background: var(--green); }
+.badge.stagnant { background: rgba(26, 20, 16, 0.08); color: var(--muted); }
+.badge.stagnant::before { background: var(--muted); }
+
+.days-cell {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.days-cell.critical { color: var(--red); }
+.days-cell.warning { color: var(--amber); }
+.days-cell.ok { color: var(--green); }
+.days-cell.infinite { color: var(--muted); font-size: 16px; font-family: 'JetBrains Mono', monospace; }
+
+.days-cell small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+  display: block;
+  margin-top: 2px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+}
+
+.empty-state .emoji { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+/* RECOMMENDATIONS */
+.recommendations {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.rec-card {
+  background: var(--paper-warm);
+  border: 1px solid var(--border);
+  padding: 20px;
+  position: relative;
+  display: flex;
+  gap: 14px;
+}
+
+.rec-card.priority-high { border-left: 3px solid var(--red); }
+.rec-card.priority-medium { border-left: 3px solid var(--amber); }
+
+.rec-card-img {
+  width: 56px;
+  height: 56px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.rec-card-content { flex: 1; min-width: 0; }
+
+.rec-card-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.rec-card-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.rec-card-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.rec-card-suggest {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.rec-card-suggest small {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+  display: block;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.rec-card-days {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.rec-card-days.critical { color: var(--red); }
+.rec-card-days.warning { color: var(--amber); }
+
+footer {
+  text-align: center;
+  padding: 40px 0 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+footer::before {
+  content: '✦ ✦ ✦';
+  display: block;
+  color: var(--accent);
+  margin-bottom: 20px;
+  letter-spacing: 1em;
+  font-size: 8px;
+}
+
+@media (max-width: 700px) {
+  .container { padding: 20px 16px 60px; }
+  header { grid-template-columns: 1fr; }
+  .header-meta { text-align: left; }
+  .threshold-control { grid-template-columns: 1fr; gap: 16px; }
+  .threshold-value { text-align: left; }
+  .product-cell { min-width: 200px; }
+  th, td { padding: 12px 10px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="brand-block">
+    <div class="brand-eyebrow">Bebidasem · Painel de Estoque</div>
+    <h1>Estoque <em>&amp;</em> Reposição</h1>
+  </div>
+  <div class="header-meta">
+    <div><span class="live"><span class="live-dot"></span>SNAPSHOT</span></div>
+    <div id="last-update">—</div>
+    <div>SHOPIFY · BRL · UTC-3</div>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-card critical">
+    <div class="stat-label">Esgotados</div>
+    <div class="stat-value" id="stat-out">—</div>
+    <div class="stat-detail" id="stat-out-detail">produtos sem estoque</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-label">Atenção</div>
+    <div class="stat-value" id="stat-low">—</div>
+    <div class="stat-detail" id="stat-low-detail">com risco de ruptura</div>
+  </div>
+  <div class="stat-card success">
+    <div class="stat-label">Saudáveis</div>
+    <div class="stat-value" id="stat-ok">—</div>
+    <div class="stat-detail" id="stat-ok-detail">estoque confortável</div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-label">Unidades totais</div>
+    <div class="stat-value" id="stat-total">—</div>
+    <div class="stat-detail" id="stat-total-detail">no inventário</div>
+  </div>
+</div>
+
+<!-- THRESHOLD -->
+<div class="threshold-control">
+  <div class="threshold-label">
+    Alertar quando estoque acabar em até
+    <strong>menos de <em id="days-display">14</em> dias</strong>
+  </div>
+  <input type="range" id="days-slider" min="3" max="60" value="14" step="1" />
+  <div class="threshold-value"><span id="days-value">14</span><span>dias</span></div>
+</div>
+
+<!-- RECOMMENDATIONS -->
+<section style="margin-bottom: 48px;">
+  <div class="section-header">
+    <h2 class="section-title">Reposição <em>prioritária</em></h2>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.05em;">
+      <span id="rec-count">0</span> ITENS
+    </span>
+  </div>
+  <div class="recommendations" id="recommendations"></div>
+</section>
+
+<!-- TABLE -->
+<section>
+  <div class="section-header">
+    <h2 class="section-title">Catálogo <em>completo</em></h2>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.05em;">
+      <span id="visible-count">0</span> / <span id="total-count">0</span> PRODUTOS
+    </span>
+  </div>
+
+  <div class="controls">
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Buscar produto, SKU, marca..." />
+    </div>
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="critical">Crítico</button>
+      <button class="filter-btn" data-filter="warning">Atenção</button>
+      <button class="filter-btn" data-filter="ok">OK</button>
+    </div>
+    <select id="vendor-filter">
+      <option value="all">Todas as marcas</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="numeric sortable" data-sort="stock">Estoque</th>
+          <th class="numeric sortable" data-sort="velocity">Venda/dia</th>
+          <th class="numeric sortable" data-sort="days">Acaba em</th>
+          <th>Status</th>
+          <th class="numeric">Sugestão</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Bebidasem · Dashboard Estático · Última coleta em <span id="footer-date"></span>
+</footer>
+
+</div>
+
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
